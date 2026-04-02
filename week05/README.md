@@ -99,6 +99,12 @@ because `wall time` includes not only the computation itself, but also:
 The calculation-time benchmark can also be shown directly in Mermaid using the same data as the table above:
 
 ```mermaid
+---
+config:
+  themeVariables:
+    xyChart:
+      plotColorPalette: "#1f77b4, #ff7f0e, #2ca02c, #d62728, #9467bd, #8c564b, #17becf"
+---
 xychart-beta
     title "Julia Set Calculation Time vs Grid Size"
     x-axis ["1024 x 1024", "2048 x 2048", "4096 x 4096", "8192 x 8192"]
@@ -110,6 +116,41 @@ xychart-beta
     line "equation" [0.310, 1.330, 5.388, 17.842]
     line "numpy" [0.223, 0.854, 3.164, 15.780]
     line "openMP" [0.070, 0.158, 0.491, 1.682]
+```
+
+Legend:
+
+- `#1f77b4` = `no comment`
+- `#ff7f0e` = `basic`
+- `#2ca02c` = `pyximport`
+- `#d62728` = `type_casting`
+- `#9467bd` = `equation`
+- `#8c564b` = `numpy`
+- `#17becf` = `openMP`
+
+Endpoint calc-time labels are listed separately below so the `1024 x 1024` values stay readable instead of overlapping:
+
+```mermaid
+flowchart LR
+    subgraph G1024["1024 x 1024 calc time (s)"]
+        A1["no comment: 3.404"]
+        A2["basic: 2.060"]
+        A3["pyximport: 1.855"]
+        A4["type_casting: 0.555"]
+        A5["equation: 0.310"]
+        A6["numpy: 0.223"]
+        A7["openMP: 0.070"]
+    end
+
+    subgraph G8192["8192 x 8192 calc time (s)"]
+        B1["no comment: 222.280"]
+        B2["basic: 122.926"]
+        B3["pyximport: 114.941"]
+        B4["type_casting: 30.128"]
+        B5["equation: 17.842"]
+        B6["numpy: 15.780"]
+        B7["openMP: 1.682"]
+    end
 ```
 
 The generated PNG is still available at:
