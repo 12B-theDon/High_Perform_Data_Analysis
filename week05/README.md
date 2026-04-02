@@ -96,6 +96,22 @@ because `wall time` includes not only the computation itself, but also:
 
 ## Output Figure
 
-The benchmark plot is saved as:
+The calculation-time benchmark can also be shown directly in Mermaid using the same data as the table above:
+
+```mermaid
+xychart-beta
+    title "Julia Set Calculation Time vs Grid Size"
+    x-axis ["1024 x 1024", "2048 x 2048", "4096 x 4096", "8192 x 8192"]
+    y-axis "Calculation time (s)" 0 --> 225
+    line "no comment" [3.404, 13.067, 58.225, 222.280]
+    line "basic" [2.060, 7.865, 27.970, 122.926]
+    line "pyximport" [1.855, 6.607, 31.488, 114.941]
+    line "type_casting" [0.555, 2.239, 8.752, 30.128]
+    line "equation" [0.310, 1.330, 5.388, 17.842]
+    line "numpy" [0.223, 0.854, 3.164, 15.780]
+    line "openMP" [0.070, 0.158, 0.491, 1.682]
+```
+
+The generated PNG is still available at:
 
 - [`julia_grid_scaling.png`](./julia_grid_scaling.png)
