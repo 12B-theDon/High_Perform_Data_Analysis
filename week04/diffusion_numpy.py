@@ -2,9 +2,14 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-data_size = (640, 640)
+def save_figure(u):
+    plt.figure()
+    plt.imshow(u)
+    plt.colorbar()
+    plt.savefig(__file__.rsplit(".", 1)[0] + ".png")
+    plt.close()
 
-
+#@profile
 def diffusion_op(u_in):
     return (
         np.roll(u_in, +1, axis=0)
@@ -14,11 +19,11 @@ def diffusion_op(u_in):
         - 4 * u_in
     )
 
-
+#@profile
 def diffusion(u_in, dt, D=1.0):
     return u_in + dt * D * diffusion_op(u_in)
 
-
+#@profile
 def dropInk(max_iter, save_steps=None):
     u = np.zeros(data_size, dtype=float)
 
@@ -29,34 +34,24 @@ def dropInk(max_iter, save_steps=None):
     if save_steps is None:
         save_steps = set()
 
-    saved = {}  # step별 결과 저장
-
     start = time.time()
 
     for i in range(max_iter):
         u = diffusion(u, 0.1)
 
-        #if i in save_steps:
-        #    saved[i] = u.copy()  # 중요: copy 안 하면 다 마지막 상태됨
-
     end = time.time()
 
-    return end - start, u, #saved
-
+    return end - start, u
 
 if __name__ == "__main__":
+    data_size = (640, 640)
+
     save_steps = {100, 200, 400}
 
     elapsed, u = dropInk(500, save_steps=save_steps)
+    save_figure(u)
     print("time elapsed:", elapsed)
 
-    #fig, axes = plt.subplots(1, len(save_steps), figsize=(15, 5))
-
-    #for ax, step in zip(axes, sorted(save_steps)):
-    #    im = ax.imshow(saved[step])
-    #    ax.set_title(f"Step {step}")
-    #    ax.axis("off")
-
-    #fig.colorbar(im, ax=axes)
-    #plt.tight_layout()
-    #plt.show()
+# time elapsed: 1.7161164283752441
+# kernprof -lv diffusion_numpy.py
+# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_numpy.py

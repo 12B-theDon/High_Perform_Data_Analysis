@@ -2,8 +2,13 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
+def save_figure(u):
+    plt.figure()
+    plt.imshow(u)
+    plt.colorbar()
+    plt.savefig(__file__.rsplit(".", 1)[0] + ".png")
+    plt.close()
 
-data_size = (640,640)
 
 #@profile
 def diffusion_op(u_in, u_out):
@@ -28,40 +33,26 @@ def dropInk(max_iter):
     ink_high = int(data_size[0] * 0.6)
     u[ink_low:ink_high, ink_low:ink_high] = 0.005
     
-    #saved = {}
-
     start = time.time()
     
     for i in range(max_iter):
         diffusion(u, u_new, 0.1)
         u, u_new = u_new, u
-        
-        #if i in save_steps:
-        #    saved[i] = u.copy()
-    
+            
     end = time.time()
-    return end-start, u, #saved
+    
+    return end-start, u
 
 # main loop for profiling
 if __name__ == "__main__":
+    data_size = (640,640)
+
     save_steps = {100, 200, 400}
 
     elapsed, u = dropInk(1000)
-    print("time elapsed: ", elapsed)
+    save_figure(u)
+    print("time elapsed:", elapsed)
 
-    #fig, axes = plt.subplots(1, len(save_steps), figsize=(15, 5))
-
-    #for ax, step in zip(axes, sorted(save_steps)):
-    #    im = ax.imshow(saved[step])
-    #    ax.set_title(f"Step {step}")
-    #    ax.axis("off")
-
-    #fig.colorbar(im, ax=axes)
-    #plt.tight_layout()
-    #plt.show()
-
-# sudo -i
-# cd /home/mhlee/Documents/High_Performance_Data_Analysis/week04
-# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_inplace.py
-
+# time elapsed: 1.9314076900482178
 # kernprof -lv diffusion_inplace.py
+# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_inplace.py

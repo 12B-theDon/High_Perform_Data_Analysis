@@ -1,0 +1,85 @@
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# kernprof -lv diffusion_numpy.py
+time elapsed: 1.3502922058105469
+Wrote profile results to 'diffusion_numpy.py.lprof'
+Timer unit: 1e-06 s
+
+Total time: 1.17515 s
+File: diffusion_numpy.py
+Function: diffusion_op at line 12
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    12                                           @profile
+    13                                           def diffusion_op(u_in):
+    14       500        103.7      0.2      0.0      return (
+    15      2500     686838.6    274.7     58.4          np.roll(u_in, +1, axis=0)
+    16       500     265099.0    530.2     22.6          + np.roll(u_in, -1, axis=0)
+    17       500      74239.8    148.5      6.3          + np.roll(u_in, +1, axis=1)
+    18       500      76244.4    152.5      6.5          + np.roll(u_in, -1, axis=1)
+    19       500      72627.7    145.3      6.2          - 4 * u_in
+    20                                               )
+
+Total time: 1.3027 s
+File: diffusion_numpy.py
+Function: diffusion at line 22
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    22                                           @profile
+    23                                           def diffusion(u_in, dt, D=1.0):
+    24       500    1302695.8   2605.4    100.0      return u_in + dt * D * diffusion_op(u_in)
+
+Total time: 1.3503 s
+File: diffusion_numpy.py
+Function: dropInk at line 26
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    26                                           @profile
+    27                                           def dropInk(max_iter, save_steps=None):
+    28         1         14.4     14.4      0.0      u = np.zeros(data_size, dtype=float)
+    29                                           
+    30         1          0.9      0.9      0.0      ink_low = int(data_size[0] * 0.4)
+    31         1          0.2      0.2      0.0      ink_high = int(data_size[0] * 0.6)
+    32         1        153.2    153.2      0.0      u[ink_low:ink_high, ink_low:ink_high] = 0.005
+    33                                           
+    34         1          0.3      0.3      0.0      if save_steps is None:
+    35                                                   save_steps = set()
+    36                                           
+    37         1          1.2      1.2      0.0      start = time.time()
+    38                                           
+    39       501        228.5      0.5      0.0      for i in range(max_iter):
+    40       500    1349898.1   2699.8    100.0          u = diffusion(u, 0.1)
+    41                                           
+    42         1          1.9      1.9      0.0      end = time.time()
+    43                                           
+    44         1          0.6      0.6      0.0      return end - start, u
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# 
+
+-------------------
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_numpy.py
+time elapsed: 1.4043364524841309
+
+ Performance counter stats for 'python3 diffusion_numpy.py':
+
+    11,267,150,352      cycles                           #    4.274 GHz                       
+    11,326,900,112      instructions                     #    1.01  insn per cycle            
+       557,600,476      cache-references                 #  211.500 M/sec                     
+        92,214,872      cache-misses                     #   16.54% of all cache refs         
+     1,615,518,983      branches                         #  612.773 M/sec                     
+        15,908,020      branch-misses                    #    0.98% of all branches           
+          2,636.41 msec task-clock                       #    1.327 CPUs utilized             
+           430,500      faults                           #  163.290 K/sec                     
+           430,500      minor-faults                     #  163.290 K/sec                     
+               340      cs                               #  128.963 /sec                      
+                11      migrations                       #    4.172 /sec                      
+
+       1.986190949 seconds time elapsed
+
+       2.205170000 seconds user
+       0.443474000 seconds sys
+
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# 

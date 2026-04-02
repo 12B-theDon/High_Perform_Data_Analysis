@@ -1,0 +1,103 @@
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# kernprof -lv diffusion_custom.py
+time elapsed: 1.683640956878662
+Wrote profile results to 'diffusion_custom.py.lprof'
+Timer unit: 1e-06 s
+
+Total time: 1.15628 s
+File: diffusion_custom.py
+Function: custom_roll at line 12
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    12                                           @profile
+    13                                           def custom_roll(rollee, shift, axis, out):
+    14      4000        864.2      0.2      0.1      if shift==1 and axis==0:
+    15      1000     138428.1    138.4     12.0          out[1:, :] += rollee[:-1, :]
+    16      1000       1888.2      1.9      0.2          out[0, :] += rollee[-1, :]
+    17      3000        548.1      0.2      0.0      elif shift == -1 and axis == 0:
+    18      1000     125197.3    125.2     10.8          out[:-1, :] += rollee[1:, :]
+    19      1000       1697.1      1.7      0.1          out[-1, :] += rollee[0, :]
+    20      2000        316.6      0.2      0.0      elif shift == 1 and axis == 1:
+    21      1000     438264.4    438.3     37.9          out[:, 1:] += rollee[:, :-1]
+    22      1000       4761.0      4.8      0.4          out[:, 0] += rollee[:, -1]
+    23      1000        177.7      0.2      0.0      elif shift == -1 and axis == 1:
+    24      1000     439470.3    439.5     38.0          out[:, :-1] += rollee[:, 1:]
+    25      1000       4667.3      4.7      0.4          out[:, -1] += rollee[:, 0]
+
+Total time: 1.46594 s
+File: diffusion_custom.py
+Function: diffusion_op at line 27
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    27                                           @profile
+    28                                           def diffusion_op(u_in, u_out):
+    29      1000     120777.4    120.8      8.2      np.copyto(u_out, u_in)
+    30      1000     176887.3    176.9     12.1      u_out *= -4
+    31      1000     144216.2    144.2      9.8      custom_roll(u_in, +1, 0, u_out)
+    32      1000     129785.1    129.8      8.9      custom_roll(u_in, -1, 0, u_out)
+    33      1000     446427.7    446.4     30.5      custom_roll(u_in, +1, 1, u_out)
+    34      1000     447844.1    447.8     30.6      custom_roll(u_in, -1, 1, u_out)
+
+Total time: 1.6789 s
+File: diffusion_custom.py
+Function: diffusion at line 36
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    36                                           @profile
+    37                                           def diffusion(u_in, u_out, dt, D=1):
+    38      1000    1469152.2   1469.2     87.5      diffusion_op(u_in, u_out)
+    39      1000      76952.9     77.0      4.6      u_out *= D * dt
+    40      1000     132795.9    132.8      7.9      u_out += u_in
+
+Total time: 1.68341 s
+File: diffusion_custom.py
+Function: dropInk at line 42
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    42                                           @profile
+    43                                           def dropInk(max_iter):
+    44         1         12.4     12.4      0.0      u = np.zeros(data_size)
+    45         1          2.8      2.8      0.0      u_new = np.zeros(data_size)
+    46         1          0.8      0.8      0.0      ink_low = int(data_size[0] * 0.4)
+    47         1          0.4      0.4      0.0      ink_high = int(data_size[0] * 0.6)
+    48         1        218.8    218.8      0.0      u[ink_low:ink_high, ink_low:ink_high] = 0.005
+    49         1          1.1      1.1      0.0      start = time.time()
+    50                                               
+    51      1001        256.4      0.3      0.0      for i in range(max_iter):
+    52      1000    1682631.1   1682.6    100.0          diffusion(u, u_new, 0.1)
+    53      1000        278.3      0.3      0.0          u, u_new = u_new, u
+    54         1          2.2      2.2      0.0      end = time.time()
+    55         1          0.8      0.8      0.0      return end-start, u
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# 
+
+-------------------
+
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_custom.py
+time elapsed: 1.612363576889038
+
+ Performance counter stats for 'python3 diffusion_custom.py':
+
+    12,408,773,603      cycles                           #    4.413 GHz                       
+    12,289,120,091      instructions                     #    0.99  insn per cycle            
+       713,614,811      cache-references                 #  253.813 M/sec                     
+        62,822,132      cache-misses                     #    8.80% of all cache refs         
+     1,418,791,785      branches                         #  504.624 M/sec                     
+        16,049,483      branch-misses                    #    1.13% of all branches           
+          2,811.58 msec task-clock                       #    1.288 CPUs utilized             
+            39,171      faults                           #   13.932 K/sec                     
+            39,171      minor-faults                     #   13.932 K/sec                     
+               426      cs                               #  151.516 /sec                      
+                16      migrations                       #    5.691 /sec                      
+
+       2.182086104 seconds time elapsed
+
+       2.744139000 seconds user
+       0.077649000 seconds sys
+
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# 

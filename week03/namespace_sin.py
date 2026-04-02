@@ -41,3 +41,7 @@ if __name__ == "__main__":
 #    dis.dis(builtin_sin)
 #    dis.dis(global_sin)
 #    dis.dis(local_sin)
+
+
+# kernprof -lv namespace_sin.py
+# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 namespace_sin.py

@@ -1,0 +1,78 @@
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# kernprof -lv diffusion_mem_reduction.py
+time elapsed:  49.647937059402466
+Wrote profile results to 'diffusion_mem_reduction.py.lprof'
+Timer unit: 1e-06 s
+
+Total time: 42.1319 s
+File: diffusion_mem_reduction.py
+Function: diffusion at line 13
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    13                                           @profile
+    14                                           def diffusion(u_in, u_out, dt, D=1.0):
+    15       100        108.8      1.1      0.0      xmax, ymax = data_size
+    16     64100       5810.4      0.1      0.0      for i in range(xmax):
+    17  41024000    4015009.7      0.1      9.5          for j in range(ymax):
+    18  40960000   14607292.7      0.4     34.7              dxx = (u_in[(i + 1) % xmax][j] + u_in[(i - 1) % xmax][j] - 2.0 * u_in[i][j])
+    19  40960000   13974767.2      0.3     33.2              dyy = (u_in[i][(j + 1) % ymax] + u_in[i][(j - 1) % ymax] - 2.0 * u_in[i][j])
+    20  40960000    9528886.5      0.2     22.6              u_out[i][j] = u_in[i][j] + D * dt * (dxx + dyy)
+
+Total time: 50.1505 s
+File: diffusion_mem_reduction.py
+Function: dropInk at line 22
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    22                                           @profile
+    23                                           def dropInk(max_iter):
+    24         1          0.4      0.4      0.0      xmax, ymax = data_size
+    25         1       1714.1   1714.1      0.0      u = [[0.0] * ymax for x in range(xmax)]
+    26         1       1829.8   1829.8      0.0      u_new = [[0.0] * ymax for x in range(xmax)]
+    27                                           
+    28                                               # initialization
+    29         1          1.5      1.5      0.0      ink_low = int(data_size[0] * 0.4)
+    30         1          0.3      0.3      0.0      ink_high = int(data_size[0] * 0.6)
+    31                                           
+    32       129         12.6      0.1      0.0      for i in range(ink_low, ink_high):
+    33     16512       1580.7      0.1      0.0          for j in range(ink_low, ink_high):
+    34     16384       1899.5      0.1      0.0              u[i][j] = 0.005
+    35                                               
+    36         1     495699.1 495699.1      1.0      u_init = copy.deepcopy(u)
+    37                                           
+    38         1          3.7      3.7      0.0      start = time.time()
+    39       101         14.8      0.1      0.0      for i in range(max_iter):
+    40       100   49647728.3 496477.3     99.0          diffusion(u, u_new, 0.1)
+    41       100         51.1      0.5      0.0          u, u_new = u_new, u
+    42         1          2.7      2.7      0.0      end = time.time()
+    43                                           
+    44         1          0.8      0.8      0.0      return end-start, u_init, u
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# 
+
+-------------------
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_mem_reduction.py
+time elapsed:  12.705368280410767
+
+ Performance counter stats for 'python3 diffusion_mem_reduction.py':
+
+    62,758,211,453      cycles                           #    4.462 GHz                       
+   241,210,983,755      instructions                     #    3.84  insn per cycle            
+        86,483,518      cache-references                 #    6.148 M/sec                     
+        26,295,711      cache-misses                     #   30.41% of all cache refs         
+    43,751,037,283      branches                         #    3.110 G/sec                     
+        15,871,739      branch-misses                    #    0.04% of all branches           
+         14,066.19 msec task-clock                       #    1.049 CPUs utilized             
+            49,694      faults                           #    3.533 K/sec                     
+            49,694      minor-faults                     #    3.533 K/sec                     
+               434      cs                               #   30.854 /sec                      
+                28      migrations                       #    1.991 /sec                      
+
+      13.414499974 seconds time elapsed
+
+      13.969504000 seconds user
+       0.115070000 seconds sys
+
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week04# 

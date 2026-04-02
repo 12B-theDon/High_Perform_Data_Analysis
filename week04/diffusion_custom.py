@@ -1,7 +1,13 @@
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
-data_size = (640,640)
+def save_figure(u):
+    plt.figure()
+    plt.imshow(u)
+    plt.colorbar()
+    plt.savefig(__file__.rsplit(".", 1)[0] + ".png")
+    plt.close()
 
 #@profile
 def custom_roll(rollee, shift, axis, out):
@@ -50,11 +56,11 @@ def dropInk(max_iter):
 
 # main loop for profiling
 if __name__ == "__main__":
+    data_size = (640,640)
     elapsed, u = dropInk(1000)
-    print(elapsed)
+    save_figure(u)
+    print("time elapsed:", elapsed)
 
-# sudo -i
-# cd /home/mhlee/Documents/High_Performance_Data_Analysis/week04
-# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_custom.py
-
+# time elapsed: 1.7757248878479004
 # kernprof -lv diffusion_custom.py
+# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 diffusion_custom.py
