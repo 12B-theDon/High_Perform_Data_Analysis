@@ -1,0 +1,5 @@
+matplotlib
+snakeviz
+line_profiler
+psutil
+memory_profiler

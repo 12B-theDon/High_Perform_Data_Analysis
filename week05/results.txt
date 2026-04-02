@@ -1,0 +1,138 @@
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 julia1_nocomment.py 
+8.30338191986084  sec
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 julia1_basic.py 
+4.517016172409058  sec
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 julia1_pyximport.py 
+4.394709825515747  sec
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 julia1_typecasting.py 
+1.2207989692687988  sec
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 julia1_typecasting_equation.py 
+0.7299339771270752  sec
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 julia1_numpy.py 
+0.5568170547485352  sec
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 julia1_openMP.py 
+0.08512616157531738  sec
+
+
+
+---------------------
+oot@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 drawGridScaled.py 
+Modules:
+  - julia1_basic.py
+  - julia1_nocomment.py
+  - julia1_numpy.py
+  - julia1_openMP.py
+  - julia1_pyximport.py
+  - julia1_typecasting.py
+  - julia1_typecasting_equation.py
+
+Grid sizes:
+  - 1024 x 1024
+  - 2048 x 2048
+  - 4096 x 4096
+  - 8192 x 8192
+  - 16384 x 16384
+Benchmarking julia1_basic.py...
+   1024 x 1024  -> calc 1.554 s, wall 1.850 s
+   2048 x 2048  -> calc 6.241 s, wall 7.264 s
+   4096 x 4096  -> calc 25.031 s, wall 29.204 s
+   8192 x 8192  -> calc 128.831 s, wall 146.252 s
+Killed
+-> Out of Memory Detected, so it has been killed.
+
+
+
+
+---------------------
+-> So I just conducted compare from 1024 to 8192.
+
+
+The result is:
+
+Julia Set Benchmark Results
+Calculation Time (seconds, calc only)
+
++---------------+------------+---------+-----------+---------------+----------+--------+--------+
+| Grid Size     | no comment | basic   | pyximport | type_casting  | equation | numpy  | openMP |
++---------------+------------+---------+-----------+---------------+----------+--------+--------+
+| 1024 x 1024   | 3.404      | 2.060   | 1.855     | 0.555         | 0.310    | 0.223  | 0.070  |
+| 2048 x 2048   | 13.067     | 7.865   | 6.607     | 2.239         | 1.330    | 0.854  | 0.158  |
+| 4096 x 4096   | 58.225     | 27.970  | 31.488    | 8.752         | 5.388    | 3.164  | 0.491  |
+| 8192 x 8192   | 222.280    | 122.926 | 114.941   | 30.128        | 17.842   | 15.780 | 1.682  |
++---------------+------------+---------+-----------+---------------+----------+--------+--------+
+
+
+And the Difference between wall time and calc time is
+[Time Difference]
+
+calc time:
+Time spent only for the Julia set calculation function itself.
+
+wall time:
+Total elapsed time for the whole execution, including data preparation,
+array/list creation, type conversion, memory allocation, and calculation.
+
+In short:
+calc time = pure computation time
+wall time = total runtime seen by the user
+
+
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week05# python3 drawGridScaled.py 
+Modules:
+  - julia1_basic.py
+  - julia1_nocomment.py
+  - julia1_numpy.py
+  - julia1_openMP.py
+  - julia1_pyximport.py
+  - julia1_typecasting.py
+  - julia1_typecasting_equation.py
+
+Grid sizes:
+  - 1024 x 1024
+  - 2048 x 2048
+  - 4096 x 4096
+  - 8192 x 8192
+Benchmarking julia1_basic.py...
+   1024 x 1024  -> calc 2.060 s, wall 2.420 s
+   2048 x 2048  -> calc 7.865 s, wall 9.279 s
+   4096 x 4096  -> calc 27.970 s, wall 32.994 s
+   8192 x 8192  -> calc 122.926 s, wall 141.344 s
+Benchmarking julia1_nocomment.py...
+   1024 x 1024  -> calc 3.404 s, wall 3.814 s
+   2048 x 2048  -> calc 13.067 s, wall 14.268 s
+   4096 x 4096  -> calc 58.225 s, wall 62.635 s
+   8192 x 8192  -> calc 222.280 s, wall 240.738 s
+Benchmarking julia1_numpy.py...
+   1024 x 1024  -> calc 0.223 s, wall 0.656 s
+   2048 x 2048  -> calc 0.854 s, wall 2.470 s
+   4096 x 4096  -> calc 3.164 s, wall 9.333 s
+   8192 x 8192  -> calc 15.780 s, wall 39.847 s
+Benchmarking julia1_openMP.py...
+   1024 x 1024  -> calc 0.070 s, wall 0.548 s
+   2048 x 2048  -> calc 0.158 s, wall 1.967 s
+   4096 x 4096  -> calc 0.491 s, wall 7.427 s
+   8192 x 8192  -> calc 1.682 s, wall 26.860 s
+Benchmarking julia1_pyximport.py...
+   1024 x 1024  -> calc 1.855 s, wall 2.167 s
+   2048 x 2048  -> calc 6.607 s, wall 7.686 s
+   4096 x 4096  -> calc 31.488 s, wall 36.087 s
+   8192 x 8192  -> calc 114.941 s, wall 134.640 s
+Benchmarking julia1_typecasting.py...
+   1024 x 1024  -> calc 0.555 s, wall 0.943 s
+   2048 x 2048  -> calc 2.239 s, wall 3.644 s
+   4096 x 4096  -> calc 8.752 s, wall 14.214 s
+   8192 x 8192  -> calc 30.128 s, wall 50.282 s
+Benchmarking julia1_typecasting_equation.py...
+   1024 x 1024  -> calc 0.310 s, wall 0.685 s
+   2048 x 2048  -> calc 1.330 s, wall 2.732 s
+   4096 x 4096  -> calc 5.388 s, wall 10.960 s
+   8192 x 8192  -> calc 17.842 s, wall 38.745 s
+
+Saved plot to: /home/mhlee/Documents/High_Performance_Data_Analysis/week05/julia_grid_scaling.png
