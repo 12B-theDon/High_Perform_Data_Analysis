@@ -3,3 +3,7 @@ snakeviz
 line_profiler
 psutil
 memory_profiler
+numba
+pympler
+scipy
+ipython_memory_usage

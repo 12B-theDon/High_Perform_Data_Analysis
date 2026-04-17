@@ -1,0 +1,3 @@
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ python3 hashTable.py 
+Min lookup time for baddict: 9.267824521999955
+Min lookup time for baddict: 0.20851217900008123

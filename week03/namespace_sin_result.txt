@@ -1,0 +1,151 @@
+1. kernprof
+
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ kernprof -lv namespace_sin.py
+Wrote profile results to 'namespace_sin.py.lprof'
+Timer unit: 1e-06 s
+
+Total time: 0.000304046 s
+File: namespace_sin.py
+Function: builtin_sin at line 7
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+     7                                           @profile
+     8                                           def builtin_sin(x):
+     9         1          0.3      0.3      0.1      res = 1
+    10      1001        101.0      0.1     33.2      for _ in range(1000):
+    11      1000        202.6      0.2     66.6          res += math.sin(x)
+    12         1          0.2      0.2      0.1      return res
+
+Total time: 0.000237762 s
+File: namespace_sin.py
+Function: global_sin at line 14
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    14                                           @profile
+    15                                           def global_sin(x):
+    16         1          0.2      0.2      0.1      res = 1
+    17      1001         84.9      0.1     35.7      for _ in range(1000):
+    18      1000        152.5      0.2     64.1          res += sin(x)
+    19         1          0.1      0.1      0.1      return res
+
+Total time: 0.000250726 s
+File: namespace_sin.py
+Function: local_sin at line 21
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    21                                           @profile
+    22                                           def local_sin(x, sin = math.sin):
+    23         1          0.1      0.1      0.0      res = 1
+    24      1001         99.0      0.1     39.5      for _ in range(1000):
+    25      1000        151.5      0.2     60.4          res += sin(x)
+    26         1          0.1      0.1      0.1      return res
+
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ 
+
+
+-----------------------
+2. timeit
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.builtin_sin(100)"
+5 loops, best of 1: 81.2 usec per loop
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.global_sin(100)"
+5 loops, best of 1: 73.2 usec per loop
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.local_sin(100)"
+5 loops, best of 1: 54.4 usec per loop
+
+------------------------
+3. perf stat
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week03# perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 namespace_sin.py
+
+ Performance counter stats for 'python3 namespace_sin.py':
+
+        56,470,305      cycles                           #    4.087 GHz                       
+        59,858,103      instructions                     #    1.06  insn per cycle            
+           630,465      cache-references                 #   45.631 M/sec                     
+           168,928      cache-misses                     #   26.79% of all cache refs         
+        12,479,714      branches                         #  903.251 M/sec                     
+           442,999      branch-misses                    #    3.55% of all branches           
+             13.82 msec task-clock                       #    0.928 CPUs utilized             
+               918      faults                           #   66.443 K/sec                     
+               918      minor-faults                     #   66.443 K/sec                     
+                 1      cs                               #   72.378 /sec                      
+                 0      migrations                       #    0.000 /sec                      
+
+       0.014892753 seconds time elapsed
+
+       0.010585000 seconds user
+       0.004234000 seconds sys
+
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week03# 
+
+
+----------------------------------
+4. dis
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week03# python3 -m memory_profiler namespace_sin.py
+  9           0 LOAD_CONST               1 (1)
+              2 STORE_FAST               1 (res)
+
+ 10           4 LOAD_GLOBAL              0 (range)
+              6 LOAD_CONST               2 (1000)
+              8 CALL_FUNCTION            1
+             10 GET_ITER
+        >>   12 FOR_ITER                 9 (to 32)
+             14 STORE_FAST               2 (_)
+
+ 11          16 LOAD_FAST                1 (res)
+             18 LOAD_GLOBAL              1 (math)
+             20 LOAD_METHOD              2 (sin)
+             22 LOAD_FAST                0 (x)
+             24 CALL_METHOD              1
+             26 INPLACE_ADD
+             28 STORE_FAST               1 (res)
+             30 JUMP_ABSOLUTE            6 (to 12)
+
+ 12     >>   32 LOAD_FAST                1 (res)
+             34 RETURN_VALUE
+ 16           0 LOAD_CONST               1 (1)
+              2 STORE_FAST               1 (res)
+
+ 17           4 LOAD_GLOBAL              0 (range)
+              6 LOAD_CONST               2 (1000)
+              8 CALL_FUNCTION            1
+             10 GET_ITER
+        >>   12 FOR_ITER                 8 (to 30)
+             14 STORE_FAST               2 (_)
+
+ 18          16 LOAD_FAST                1 (res)
+             18 LOAD_GLOBAL              1 (sin)
+             20 LOAD_FAST                0 (x)
+             22 CALL_FUNCTION            1
+             24 INPLACE_ADD
+             26 STORE_FAST               1 (res)
+             28 JUMP_ABSOLUTE            6 (to 12)
+
+ 19     >>   30 LOAD_FAST                1 (res)
+             32 RETURN_VALUE
+ 23           0 LOAD_CONST               1 (1)
+              2 STORE_FAST               2 (res)
+
+ 24           4 LOAD_GLOBAL              0 (range)
+              6 LOAD_CONST               2 (1000)
+              8 CALL_FUNCTION            1
+             10 GET_ITER
+        >>   12 FOR_ITER                 8 (to 30)
+             14 STORE_FAST               3 (_)
+
+ 25          16 LOAD_FAST                2 (res)
+             18 LOAD_FAST                1 (sin)
+             20 LOAD_FAST                0 (x)
+             22 CALL_FUNCTION            1
+             24 INPLACE_ADD
+             26 STORE_FAST               2 (res)
+             28 JUMP_ABSOLUTE            6 (to 12)
+
+ 26     >>   30 LOAD_FAST                2 (res)
+             32 RETURN_VALUE
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week03# 
+
+

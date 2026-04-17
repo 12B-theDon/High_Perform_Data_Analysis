@@ -1,0 +1,26 @@
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ python3 simple_memoryProfiler.py 
+Filename: /home/mhlee/Documents/High_Performance_Data_Analysis/week03/simple_memoryProfiler.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+     4     19.3 MiB     19.3 MiB           1   @profile
+     5                                         def list_comprehension():
+     6     23.3 MiB      4.0 MiB      100003       arr1 = [i for i in range(100_000)]
+     7     23.3 MiB      0.0 MiB           1       return arr1
+
+
+Filename: /home/mhlee/Documents/High_Performance_Data_Analysis/week03/simple_memoryProfiler.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+    10     20.6 MiB     20.6 MiB           1   @profile
+    11                                         def list_append():
+    12     20.6 MiB      0.0 MiB           1       arr2 = []
+    13     23.2 MiB      0.0 MiB      100001       for i in range(100_000):
+    14     23.2 MiB      2.6 MiB      100000           arr2.append(i)
+    15     23.2 MiB      0.0 MiB           1       return arr2
+
+
+
+Results can vary by computer and Python version.
+Run with: python3 -m memory_profiler week03/simple_memoryProfiler.py

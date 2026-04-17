@@ -1,0 +1,4 @@
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ python3 namespace.py
+{'a': 30}
+{'a': 20, 'inner_func': <function outer_func.<locals>.inner_func at 0x73eb97a8a200>}
+{'__name__': '__main__', '__doc__': None, '__package__': None, '__loader__': <_frozen_importlib_external.SourceFileLoader object at 0x73eb97a19c30>, '__spec__': None, '__annotations__': {}, '__builtins__': <module 'builtins' (built-in)>, '__file__': '/home/mhlee/Documents/High_Performance_Data_Analysis/week03/namespace.py', '__cached__': None, 'outer_func': <function outer_func at 0x73eb97b63d90>, 'a': 10}

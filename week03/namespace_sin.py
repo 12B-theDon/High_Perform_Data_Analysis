@@ -4,21 +4,21 @@ import timeit
 
 import dis
 
-@profile
+#@profile
 def builtin_sin(x):
     res = 1
     for _ in range(1000):
         res += math.sin(x)
     return res
 
-@profile
+#@profile
 def global_sin(x):
     res = 1
     for _ in range(1000):
         res += sin(x)
     return res
 
-@profile
+#@profile
 def local_sin(x, sin = math.sin):
     res = 1
     for _ in range(1000):
@@ -27,11 +27,6 @@ def local_sin(x, sin = math.sin):
 
 x = 1.0
 
-#python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.builtin_sin(100)"
-
-#python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.global_sin(100)"
-
-#python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.local_sin(100)"
 
 #python3 -m memory_profiler namespace_sin.py
 if __name__ == "__main__":
@@ -44,4 +39,13 @@ if __name__ == "__main__":
 
 
 # kernprof -lv namespace_sin.py
+
+# NOW ANNOTATE @profile
+#python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.builtin_sin(100)"
+#python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.global_sin(100)"
+#python3 -m timeit -n 5 -r 1 -s "import namespace_sin" "namespace_sin.local_sin(100)"
+
+# sudo -i and cd to this folder
 # perf stat -e cycles,instructions,cache-references,cache-misses,branches,branch-misses,task-clock,faults,minor-faults,cs,migrations python3 namespace_sin.py
+
+# NOW DIS-ANNOTATE dis.dis and annotate other function that does not use dis. 

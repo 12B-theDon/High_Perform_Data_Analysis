@@ -44,3 +44,10 @@ def printVer_build_Julia_set(desired_width, max_iterations):
 	# 여기까지 변형
 
 	return output
+
+if __name__ == "__main__":
+    start_time = time.time()
+    printVer_build_Julia_set(desired_width=2000, max_iterations=500)
+    end_time = time.time()
+    secs = end_time - start_time
+    print(printVer_build_Julia_set.__name__ + " took", secs, "seconds to execute.")

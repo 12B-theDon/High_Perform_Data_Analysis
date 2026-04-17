@@ -1,0 +1,26 @@
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week03# python3 list_generator.py 
+fibonacci_list(100_000): 289.58 ms per loop
+fibonacci_gen(100_000): 158.84 ns per loop
+
+Generator: lazy iterator. It produces values only when needed.
+Results can vary by computer and Python version.
+Run memory check with: python3 -m memory_profiler week03/list_generator.py
+Filename: /home/mhlee/Documents/High_Performance_Data_Analysis/week03/list_generator.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+    23     24.6 MiB     24.6 MiB           1   @profile
+    24                                         def profile_fibonacci_list():
+    25    465.9 MiB    441.3 MiB           1       return fibonacci_list(100_000)
+
+
+Filename: /home/mhlee/Documents/High_Performance_Data_Analysis/week03/list_generator.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+    28    466.0 MiB    466.0 MiB           1   @profile
+    29                                         def profile_fibonacci_gen():
+    30    466.0 MiB      0.0 MiB           1       return fibonacci_gen(100_000)
+
+
+root@mhlee-950XDA:/home/mhlee/Documents/High_Performance_Data_Analysis/week03# 

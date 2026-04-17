@@ -1,0 +1,11 @@
+docker run -it \
+  --name single_cpu \
+  --cpus="1" \
+  --privileged \
+  --device=/dev/bus/usb \
+  --env="DISPLAY=$DISPLAY" \
+  --env="QT_X11_NO_MITSHM=1" \
+  --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+  --volume="/home/mhlee/Documents/High_Performance_Data_Analysis:/workspace" \
+  --network=host \
+  high-performance-data-analysis

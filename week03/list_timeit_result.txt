@@ -1,0 +1,5 @@
+l[5]: 26.97 ns per loop
+l[500]: 29.98 ns per loop
+l[500_000]: 24.08 ns per loop
+
+Conclusion: list indexing is O(1).

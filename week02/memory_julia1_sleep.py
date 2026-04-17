@@ -1,6 +1,34 @@
-import pstats
-import cProfile
+import time
 
+@profile
+def no_ABS_calculate_Julia_set(max_iter, zs, cs):
+    output = [0] * len(zs)
+    time.sleep(1)
+
+    for i in range(len(zs)):
+        n = 0
+        z = zs[i]
+        c = cs[i]
+
+        while True:
+
+            if n >= max_iter:
+                break
+
+            zr = z.real
+            zi = z.imag
+
+            if zr * zr + zi * zi >= 4:
+                break
+
+            z = z * z + c
+            n += 1
+
+        output[i] = n
+
+    return output
+
+@profile
 def calculate_Julia_set(max_iter, zs, cs):
     output = [0] * len(zs)
     for i in range(len(zs)):
@@ -14,6 +42,7 @@ def calculate_Julia_set(max_iter, zs, cs):
     return output
 
 #---------------------------------------------------#
+@profile
 def build_Julia_set(desired_width, max_iterations):
     x1 = -1.8
     x2 = 1.8
@@ -46,15 +75,16 @@ def build_Julia_set(desired_width, max_iterations):
             zs.append(complex(xcoord, ycoord))
             cs.append(complex(c_real, c_imag))
 
-    output = calculate_Julia_set(max_iterations, zs, cs)
+    
+    start_time = time.time()
+    output = calculate_Julia_set(max_iterations, zs, cs)  # 모든 점에 대해 Julia 반복 계산
+    #output = no_ABS_calculate_Julia_set(max_iterations, zs, cs)
+    end_time = time.time()
+    secs = end_time - start_time
+    print(build_Julia_set.__name__ + " took", secs, "seconds to execute.")
 
     return output
 
 if __name__ == "__main__":
-    #cProfile.run("code that should be profiled.py","name of saved stats file.stats" )
-    cProfile.run("build_Julia_set(1000, 300)", "profile.stats")
+    build_Julia_set(1000, 300)
     
-    p = pstats.Stats("profile.stats")
-    p.sort_stats("cumulative")
-    p.print_stats()
-    p.print_callers()

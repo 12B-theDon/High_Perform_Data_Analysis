@@ -1,0 +1,6 @@
+mhlee@mhlee-950XDA:~/Documents/High_Performance_Data_Analysis/week03$ python3 tuple_timit.py 
+arr_list: 41.65 ns per loop
+arr_tuple: 8.50 ns per loop
+
+Tuple creation is usually faster than list creation for fixed values.
+Results can vary by computer and Python version.

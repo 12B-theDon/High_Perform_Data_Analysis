@@ -1,9 +1,8 @@
 import time
 
-#@profile
+@profile
 def calculate_Julia_set(max_iter, zs, cs):
-    output = [0] * len(zs)          # 각 점의 반복 횟수를 저장할 결과 리스트 생성. 
-    # This is a major source of making the code slow. 
+    output = [0] * len(zs)          # 각 점의 반복 횟수를 저장할 결과 리스트 생성
 
     for i in range(len(zs)):        # 모든 복소수 점에 대해 반복
       n = 0                         # 현재 점의 반복 횟수 초기화
@@ -19,6 +18,11 @@ def calculate_Julia_set(max_iter, zs, cs):
 
     return output                   # 전체 결과 반환
 
+
+#---------------------------------------------------#
+
+# Julia set을 만들기 위한 복소수 좌표들을 생성하고 계산하는 함수
+@profile
 def build_Julia_set(desired_width, max_iterations):
     x1 = -1.8                       # x축 시작값
     x2 = 1.8                        # x축 끝값
@@ -61,10 +65,12 @@ def build_Julia_set(desired_width, max_iterations):
     end_time = time.time()
     secs = end_time - start_time
     print(build_Julia_set.__name__ + " took", secs, "seconds to execute.")
-
+	
     return output                   # 계산 결과 반환
 
 
 # 이 파일을 직접 실행했을 때만 아래 코드 실행
 if __name__ == "__main__":
-    build_Julia_set(desired_width=2000, max_iterations=500)	
+    build_Julia_set(desired_width=2000, max_iterations=500)
+
+# kernprof -lv julia1_lineProfiler.py
