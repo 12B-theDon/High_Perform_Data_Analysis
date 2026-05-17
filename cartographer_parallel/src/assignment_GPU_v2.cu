@@ -11,12 +11,33 @@
 //
 // GPU v1 대비 추가/변경된 점:
 //   1. v1의 device memory reuse, grid/scan cache, CUDA event reuse, CPU fallback은 유지한다.
+//      Why:
+//        v1에서 줄인 allocation/copy/event overhead는 v2에서도 여전히 필요하다.
+//      Expected:
+//        v2의 성능 차이가 memory management 변화가 아니라 kernel reduction 변화에서 오도록 한다.
 //   2. block reduction을 shared-memory tree reduction에서 warp shuffle 기반 reduction으로
 //      바꾸었다.
+//      Why:
+//        v1의 tree reduction은 stride마다 shared memory load/store와 __syncthreads()가 반복된다.
+//        Jetson Nano처럼 작은 GPU에서는 이 synchronization overhead도 kernel time에 영향을 준다.
+//      Expected:
+//        warp 내부 합산을 register shuffle로 처리하여 reduction 단계의 instruction 수와
+//        synchronization 비용을 줄인다.
 //   3. 256 threads/block = 8 warps/block 구조를 명시하고, 각 warp가 먼저 자기 내부 합을
 //      __shfl_down_sync로 줄인다.
+//      Why:
+//        CUDA execution의 기본 단위가 warp이므로, reduction도 warp 단위로 설계하면
+//        hardware execution model에 더 잘 맞는다.
+//      Expected:
+//        professor가 중요하게 보는 warp/thread-block 구조가 코드에 명확히 드러나고,
+//        v1보다 kernel time이 감소한다.
 //   4. 각 warp의 lane 0만 shared memory에 warp sum을 쓰고, 첫 번째 warp가 8개의 warp sum을
 //      다시 줄여 candidate 하나의 score를 만든다.
+//      Why:
+//        모든 thread가 shared memory reduction에 참여하는 대신 warp당 결과 하나만 공유하면
+//        shared memory traffic과 synchronization 횟수를 줄일 수 있다.
+//      Expected:
+//        candidate 수가 큰 d2/d1 case에서 v1보다 더 빠른 GPU kernel을 얻는다.
 //
 // 기대 효과:
 //   - v1의 reduction은 모든 단계마다 shared memory 접근과 __syncthreads()가 반복된다.
@@ -31,6 +52,11 @@ namespace {
 
 // Jetson Nano(Tegra X1)의 CUDA warp size는 32이다.
 // 256 threads/block을 사용하므로 candidate 하나는 8개의 warp가 나누어 처리한다.
+// Why:
+//   block당 256 thread는 충분한 scan point 병렬성을 제공하면서도 block 수가 candidate 수와
+//   직접 대응되어 해석하기 쉽다.
+// Expected:
+//   one block per candidate 설계를 유지하면서 warp-aware reduction을 명확히 적용할 수 있다.
 constexpr int kWarpSize = 32;
 constexpr int kThreadsPerBlock = 256;
 constexpr int kWarpsPerBlock = kThreadsPerBlock / kWarpSize;
@@ -49,6 +75,10 @@ bool EnsureDeviceBuffer(T** const ptr, size_t* const capacity_bytes,
                         const size_t required_bytes,
                         const char* const message) {
   // v1과 동일하게, 이미 충분히 큰 device buffer가 있으면 재할당하지 않는다.
+  // Why:
+  //   v2의 목표는 reduction 최적화이므로, v1에서 효과가 있었던 buffer reuse는 유지한다.
+  // Expected:
+  //   cudaMalloc/cudaFree overhead가 다시 생기지 않고 kernel 개선 효과를 더 공정하게 비교한다.
   if (*capacity_bytes >= required_bytes) return true;
 
   cudaFree(*ptr);
@@ -72,6 +102,10 @@ void ScoreAllCpuFallback(const std::vector<unsigned char>& grid, const int w,
                          const std::vector<int>& cy,
                          std::vector<float>* const score) {
   // v2에서도 small candidate case는 GPU보다 CPU가 빠를 수 있으므로 fallback을 유지한다.
+  // Why:
+  //   warp-aware reduction을 넣어도 candidate 수가 너무 작으면 GPU launch/copy overhead가 남는다.
+  // Expected:
+  //   d4/d3 같은 small case에서는 CPU fallback으로 안정적인 성능을 유지한다.
   const int n = static_cast<int>(std::min(cx.size(), cy.size()));
   const int p = static_cast<int>(std::min(px.size(), py.size()));
   score->assign(n, 0.0f);
@@ -113,6 +147,10 @@ void ScoreAllCpuFallback(const std::vector<unsigned char>& grid, const int w,
 struct ScoreAllGpuState {
   // v1에서 도입한 persistent state를 그대로 사용한다.
   // v2의 새 최적화는 이 state가 아니라 kernel reduction 방식에 있다.
+  // Why:
+  //   v1과 v2를 비교할 때 memory reuse 조건을 동일하게 두어 reduction 변경의 효과를 분리한다.
+  // Expected:
+  //   profiling 결과에서 v2 개선이 warp-aware kernel에서 왔다고 설명하기 쉬워진다.
   unsigned char* d_grid = nullptr;
   int* d_px = nullptr;
   int* d_py = nullptr;
@@ -184,6 +222,10 @@ struct ScoreAllGpuState {
 __inline__ __device__ int WarpReduceSum(int value) {
   // warp 내부 32개 thread의 값을 register shuffle로 합산한다.
   // shared memory를 거치지 않기 때문에 v1의 tree reduction보다 가볍다.
+  // Why:
+  //   같은 warp 안의 thread들은 lock-step으로 실행되므로 __syncthreads() 없이 값을 주고받을 수 있다.
+  // Expected:
+  //   shared memory access와 block-wide synchronization을 줄여 reduction overhead가 감소한다.
   value += __shfl_down_sync(0xffffffff, value, 16);
   value += __shfl_down_sync(0xffffffff, value, 8);
   value += __shfl_down_sync(0xffffffff, value, 4);
@@ -199,6 +241,10 @@ __global__ void ScoreAllKernelWarpReduce(
     float* const score) {
   // v2 kernel도 blockIdx.x = candidate 구조는 유지한다.
   // 차이는 partial sum을 합치는 reduction 단계가 warp-aware라는 점이다.
+  // Why:
+  //   v1과 같은 parallel mapping을 유지하면 v2의 변화가 reduction 방식 하나로 제한된다.
+  // Expected:
+  //   같은 candidate/scan workload에서 v1 대비 kernel time 변화를 직접 비교할 수 있다.
   const int candidate = blockIdx.x;
   const int tid = threadIdx.x;
   if (candidate >= n) return;
@@ -222,11 +268,16 @@ __global__ void ScoreAllKernelWarpReduce(
   const int lane = tid & (kWarpSize - 1);
   const int warp_id = tid / kWarpSize;
   // Step 1: 각 warp가 자기 warp 내부의 local_sum을 먼저 합친다.
+  // Expected:
+  //   256개 thread의 partial sum을 바로 shared memory tree로 줄이는 대신,
+  //   먼저 8개의 warp sum으로 압축한다.
   local_sum = WarpReduceSum(local_sum);
 
   __shared__ int warp_sums[kWarpsPerBlock];
   if (lane == 0) {
     // Step 2: warp마다 대표 thread(lane 0) 하나만 shared memory에 결과를 쓴다.
+    // Why:
+    //   warp당 하나의 값만 block-level 공유가 필요하므로 shared memory write를 8개로 제한한다.
     warp_sums[warp_id] = local_sum;
   }
   __syncthreads();
@@ -234,6 +285,8 @@ __global__ void ScoreAllKernelWarpReduce(
   int block_sum = 0;
   if (warp_id == 0) {
     // Step 3: 첫 번째 warp가 8개의 warp sum을 다시 합쳐 block 전체 합을 만든다.
+    // Expected:
+    //   마지막 합산도 shuffle 기반으로 처리되어 v1보다 synchronization 단계가 적다.
     block_sum = lane < kWarpsPerBlock ? warp_sums[lane] : 0;
     block_sum = WarpReduceSum(block_sum);
     if (lane == 0) {
@@ -265,6 +318,10 @@ void score_all_GPU_v2(const std::vector<unsigned char>& grid, const int w,
 
   const int kMinGpuCandidates = 1024;
   // v1과 같은 policy: candidate가 적으면 GPU 병렬성이 부족하므로 CPU fallback을 쓴다.
+  // Why:
+  //   v2 kernel이 빨라져도 small-candidate case의 지배 비용은 여전히 launch/copy overhead이다.
+  // Expected:
+  //   d4/d3에서는 CPU v1 수준을 유지하고, d2/d1에서는 GPU v2 kernel 이득을 얻는다.
   if (n < kMinGpuCandidates) {
     const auto cpu_t0 = std::chrono::high_resolution_clock::now();
     ScoreAllCpuFallback(grid, w, h, px, py, cx, cy, score);
@@ -303,6 +360,8 @@ void score_all_GPU_v2(const std::vector<unsigned char>& grid, const int w,
   const auto h2d_t0 = std::chrono::high_resolution_clock::now();
   // v1과 동일하게 grid/scan point는 cache하고, candidate arrays(cx/cy)는 매 호출 복사한다.
   // branch-and-bound 단계마다 candidate set은 바뀌지만 grid와 scan은 자주 재사용되기 때문이다.
+  // Expected:
+  //   grid/scan 재복사를 피하면서도 매번 바뀌는 candidate 위치는 정확히 device에 반영한다.
   if (state.cached_grid != grid.data() ||
       state.cached_grid_bytes != grid_bytes || state.cached_w != w ||
       state.cached_h != h) {
