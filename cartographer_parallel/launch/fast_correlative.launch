@@ -1,5 +1,6 @@
 <launch>
   <arg name="map_yaml_file" default="$(find cartographer_parallel)/maps/0501.yaml" />
+  <arg name="node_type" default="fast_correlative_node" />
 
   <arg name="scan_topic" default="scan" />
 
@@ -16,7 +17,7 @@
   <arg name="publish_top_candidates" default="150" />
   <arg name="global_first_match" default="false" />
 
-  <node pkg="cartographer_parallel" type="fast_correlative_node"
+  <node pkg="cartographer_parallel" type="$(arg node_type)"
         name="fast_correlative_node" output="screen">
     <param name="map_yaml_file" value="$(arg map_yaml_file)" />
     <param name="scan_topic" value="$(arg scan_topic)" />

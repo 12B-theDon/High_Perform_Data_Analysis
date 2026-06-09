@@ -7,6 +7,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -18,6 +19,14 @@
 
 namespace cartographer_parallel_ros {
 namespace {
+
+#ifndef CARTOGRAPHER_PARALLEL_NODE_PROFILE_LABEL
+#define CARTOGRAPHER_PARALLEL_NODE_PROFILE_LABEL "baseline"
+#endif
+
+#ifndef CARTOGRAPHER_PARALLEL_ROS_NODE_NAME
+#define CARTOGRAPHER_PARALLEL_ROS_NODE_NAME "fast_correlative_node"
+#endif
 
 geometry_msgs::Quaternion YawToQuat(const double yaw) {
   geometry_msgs::Quaternion q;
@@ -209,7 +218,29 @@ class FastCorrelativeNode {
 
     const bool global =
         global_every_n_ > 0 && scan_count_ % global_every_n_ == 0;
+    const auto t0 = std::chrono::steady_clock::now();
+    // TODO: If GPU scoring is used, ensure CUDA work is synchronized before
+    // this timing range ends, e.g. with cudaDeviceSynchronize().
     const bool ok = matcher_.Match(xs, ys, pose_, global, &out);
+    const auto t1 = std::chrono::steady_clock::now();
+    const double match_ms =
+        std::chrono::duration<double, std::milli>(t1 - t0).count();
+    static int node_profile_calls = 0;
+    static double node_profile_total_ms = 0.0;
+    ++node_profile_calls;
+    node_profile_total_ms += match_ms;
+    ROS_INFO_STREAM("[Node profile "
+                    << CARTOGRAPHER_PARALLEL_NODE_PROFILE_LABEL
+                    << "] calls=" << node_profile_calls
+                    << " total_avg="
+                    << node_profile_total_ms /
+                           static_cast<double>(node_profile_calls)
+                    << " ms total_last=" << match_ms
+                    << " ms scan_points=" << xs.size()
+                    << " global=" << (global ? 1 : 0)
+                    << " ok=" << (ok ? 1 : 0)
+                    << " score=" << out.score);
+    ROS_INFO_STREAM("[match_time] " << match_ms << " ms");
     ++scan_count_;
     if (!ok) {
       ROS_WARN_THROTTLE(1.0, "Fast correlative match below min_score.");
@@ -318,7 +349,7 @@ class FastCorrelativeNode {
 }  // namespace cartographer_parallel_ros
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "fast_correlative_node");
+  ros::init(argc, argv, CARTOGRAPHER_PARALLEL_ROS_NODE_NAME);
   cartographer_parallel_ros::FastCorrelativeNode node;
   ros::spin();
   return 0;

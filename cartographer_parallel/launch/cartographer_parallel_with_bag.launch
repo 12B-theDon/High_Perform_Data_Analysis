@@ -4,11 +4,12 @@
 
   <arg name="bag_file" default="$(find cartographer_parallel)/bags/scan.bag" />
   <arg name="map_yaml_file" default="$(find cartographer_parallel)/maps/0501.yaml" />
+  <arg name="node_type" default="fast_correlative_node" />
   <arg name="full_map_search" default="false" />
   <arg name="linear_search_window" default="3.0" />
   <arg name="global_search_window" default="20.0" />
   <arg name="angular_search_window" default="0.35" />
-  <arg name="branch_and_bound_depth" default="4" />
+  <arg name="branch_and_bound_depth" default="1" />
   <arg name="initial_x" default="-2.0" />
   <arg name="initial_y" default="6.82" />
   <arg name="initial_yaw" default="-3.0255282583321743" />
@@ -20,6 +21,7 @@
   <group ns="$(arg ns)">
     <include file="$(find cartographer_parallel)/launch/fast_correlative.launch">
       <arg name="map_yaml_file" value="$(arg map_yaml_file)" />
+      <arg name="node_type" value="$(arg node_type)" />
 
       <!-- Relative topic name. Inside group, this becomes /$(arg ns)/scan -->
       <arg name="scan_topic" value="scan" />

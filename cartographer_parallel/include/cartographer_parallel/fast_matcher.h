@@ -94,6 +94,9 @@ class FastMatcher {
                                  int depth) const;
   void Score(const Grid& grid, const std::vector<Scan>& scans,
              std::vector<Cand>* cand) const;
+  void ScoreRegular(const Grid& grid, const std::vector<Scan>& scans,
+                    const std::vector<Bounds>& bounds, int depth,
+                    std::vector<Cand>* cand) const;
   Cand Branch(const std::vector<Grid>& grids, const std::vector<Scan>& scans,
               const std::vector<Bounds>& bounds,
               const std::vector<Cand>& cand, int depth,
