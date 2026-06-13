@@ -1,6 +1,6 @@
 # PA02 Setup and Run
 
-PA02 코드를 Jetson Nano의 ROS1 catkin workspace에서 빌드하고 실행하는 절차이다.
+PA02 코드를 Jetson Nano의 ROS1 catkin workspace에서 빌드하고 실행했던 절차를 정리하였다.
 
 ## 기준 코드
 
@@ -20,7 +20,7 @@ https://github.com/12B-theDon/High_Perform_Data_Analysis/tree/PA01
 
 ## 패키지 배치
 
-저장소의 ROS package는 `cartographer_parallel/`이다.
+저장소의 ROS package는 `cartographer_parallel/`을 사용하였다.
 
 ```bash
 mkdir -p ~/catkin_ws/src
@@ -43,7 +43,7 @@ source devel/setup.bash
 export ROS_MASTER_URI=http://localhost:11311
 ```
 
-CUDA 실행 파일은 보통 다음 위치에 생성된다.
+CUDA 실행 파일은 다음 위치에 생성되는 것을 기준으로 확인하였다.
 
 ```bash
 ~/catkin_ws/devel/lib/cartographer_parallel/fast_correlative_node
@@ -51,7 +51,7 @@ CUDA 실행 파일은 보통 다음 위치에 생성된다.
 
 ## CPU 버전 빌드
 
-CPU / OpenMP 비교 실행이 필요할 때만 사용한다.
+CPU / OpenMP 비교 실행이 필요할 때만 사용하였다.
 
 ```bash
 cd ~/catkin_ws
@@ -60,7 +60,7 @@ source devel/setup.bash
 export ROS_MASTER_URI=http://localhost:11311
 ```
 
-CPU 전용 실행 파일은 다음 위치에 생성된다.
+CPU 전용 실행 파일은 다음 위치에 생성되는 것을 기준으로 확인하였다.
 
 ```bash
 ~/catkin_ws/devel/lib/cartographer_parallel/cpu_fast_correlative_node
@@ -68,7 +68,7 @@ CPU 전용 실행 파일은 다음 위치에 생성된다.
 
 ## 기본 실행
 
-포함된 map과 bag을 사용하여 Fast Correlative Scan Matcher를 실행한다.
+포함된 map과 bag을 사용하여 Fast Correlative Scan Matcher를 실행하였다.
 
 ```bash
 cd ~/catkin_ws
@@ -80,7 +80,7 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
   branch_and_bound_depth:=2
 ```
 
-기본 입력은 다음과 같다.
+기본 입력은 다음과 같이 사용하였다.
 
 - map: `$(find cartographer_parallel)/maps/0501.yaml`
 - bag: `$(find cartographer_parallel)/bags/scan.bag`
@@ -106,7 +106,7 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 cd ~/catkin_ws
 source devel/setup.bash
 export ROS_MASTER_URI=http://localhost:11311
-export CUDA_SCORE_VERSION=ver8
+export CUDA_SCORE_VERSION=ver6
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
   ns:=student_05 \
@@ -115,7 +115,7 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 
 ## CUDA version mapping
 
-`CUDA_SCORE_VERSION`은 실행할 CUDA scoring 구현을 선택하는 환경 변수이다. 보고서와 실행 문서에서는 내부 version 이름 대신 다음 구현명으로 해석한다.
+`CUDA_SCORE_VERSION`은 실행할 CUDA scoring 구현을 선택하기 위해 사용한 환경 변수이다. 보고서와 실행 문서에서는 내부 version 이름 대신 다음 구현명으로 해석하였다.
 
 | selector | 구현명 | 의미 |
 |---|---|---|
@@ -125,13 +125,13 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 | `ver3` | bounds만 | 정규 candidate grid를 bounds-indexed 방식으로 계산하는 비 batch 구현 |
 | `ver4` | kernel 변경 | 비 batch 호출 구조에서 kernel 내부 reduction과 memory read 방식을 변경한 구현 |
 | `ver5` | scan batch | 여러 scan의 point/candidate를 flat array로 묶어 batch kernel로 처리 |
-| `ver6` | bounds 감소 | scan batch에 `flat_cell`, `candidate_cell`, `full_inside` 기반 bounds check 감소 적용 |
+| `ver6` | 최종 batch CUDA / bounds 감소 | scan batch에 `flat_cell`, `candidate_cell`, `full_inside` 기반 bounds check 감소 적용 |
 | `ver7` | scan batch 개선 | scan별 min/max bounds로 full-inside candidate를 판정하는 batch 구현 |
-| `ver8` | 최종 batch CUDA | sorted point offset과 `flat_cell`을 사용한 최종 bounds 감소 batch 구현 |
+| `ver8` | 추가 sorted-offset 실험 | sorted point offset과 `flat_cell`을 사용한 추가 batch 구현 |
 
-6개의 실험 구현은 `kernel 변경`, `buffer 재사용`, `shmem만`, `bounds만`, `scan batch`, `bounds 감소`로 묶어 비교한다. `ver5`와 `ver7`은 scan batch 계열, `ver6`과 `ver8`은 bounds 감소 계열이며, 최종 결과는 `ver8`을 사용한다.
+6개의 실험 구현은 `kernel 변경`, `buffer 재사용`, `shmem만`, `bounds만`, `scan batch`, `bounds 감소`로 묶어 비교하였다. `ver5`와 `ver7`은 scan batch 계열, `ver6`과 `ver8`은 bounds 감소 계열로 정리하였다. 최종 결과는 기본 실행값이기도 한 `ver6`을 사용하였다.
 
-중간 구현을 실행하려면 `CUDA_SCORE_VERSION`만 바꾼다.
+중간 구현은 `CUDA_SCORE_VERSION`만 바꾸어 실행하였다.
 
 ```bash
 export CUDA_SCORE_VERSION=ver1   # shmem만
@@ -139,12 +139,12 @@ export CUDA_SCORE_VERSION=ver2   # buffer 재사용
 export CUDA_SCORE_VERSION=ver3   # bounds만
 export CUDA_SCORE_VERSION=ver4   # kernel 변경
 export CUDA_SCORE_VERSION=ver5   # scan batch
-export CUDA_SCORE_VERSION=ver8   # 최종 batch CUDA
+export CUDA_SCORE_VERSION=ver6   # 최종 batch CUDA / bounds 감소
 ```
 
 ## workload 변경 실행
 
-workload는 map resolution과 branch-and-bound depth에 의해 달라진다. 실행 전에 map yaml의 `resolution` 값을 바꾼 뒤 같은 launch를 실행한다.
+workload는 map resolution과 branch-and-bound depth에 의해 달라지도록 설정하였다. 실행 전 map yaml의 `resolution` 값을 바꾼 뒤 같은 launch를 실행하였다.
 
 ```bash
 MAP_YAML="$(rospack find cartographer_parallel)/maps/0501.yaml"
@@ -152,7 +152,7 @@ cp "$MAP_YAML" "${MAP_YAML}.bak"
 
 sed -i -E "s/^resolution:.*/resolution: 0.05/" "$MAP_YAML"
 
-export CUDA_SCORE_VERSION=ver8
+export CUDA_SCORE_VERSION=ver6
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
   ns:=student_05 \
   branch_and_bound_depth:=2

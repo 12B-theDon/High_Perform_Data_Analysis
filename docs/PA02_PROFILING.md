@@ -1,10 +1,10 @@
 # PA02 Profiling Reproduction
 
-수정된 코드를 실행했을 때 terminal에서 profiling 결과를 확인하는 방법이다. 결과 해석이 아니라 재현 절차만 정리한다.
+수정된 코드를 실행했을 때 terminal에서 profiling 결과를 확인했던 방법이다. 결과 해석이 아니라 재현 절차만 정리하였다.
 
 ## 코드 내 profiling 출력
 
-node를 실행하면 다음 형태의 profiling line이 출력된다.
+node를 실행하면 다음 형태의 profiling line이 출력되도록 하였다.
 
 ```text
 [CUDA score dispatcher] CUDA_SCORE_VERSION=...
@@ -15,7 +15,7 @@ node를 실행하면 다음 형태의 profiling line이 출력된다.
 [match_time] ... ms
 ```
 
-출력 의미는 다음과 같다.
+출력 의미는 다음과 같이 정리하였다.
 
 - `[score_all CUDA ...]`: CUDA score 호출 단위 시간
 - `[Score profile]`: `FastMatcher::Score()` 전체 시간과 candidate 수
@@ -28,7 +28,7 @@ node를 실행하면 다음 형태의 profiling line이 출력된다.
 cd ~/catkin_ws
 source devel/setup.bash
 export ROS_MASTER_URI=http://localhost:11311
-export CUDA_SCORE_VERSION=ver8
+export CUDA_SCORE_VERSION=ver6
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
   ns:=student_05 \
@@ -60,20 +60,20 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 최종 batch CUDA도 같은 방식으로 `CUDA_SCORE_VERSION`과 파일명만 바꾸어 저장하였다.
 
 ```bash
-export CUDA_SCORE_VERSION=ver8
+export CUDA_SCORE_VERSION=ver6
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
   ns:=student_05 \
   branch_and_bound_depth:=2 \
   2>&1 \
   | grep --line-buffered -E "CUDA score dispatcher|\\[score_all CUDA|\\[Score profile|\\[MatchWithWindow profile|\\[Node profile|\\[match_time\\]|ERROR|FATAL|timeout|timed out" \
-  | tee cuda_logs/PA02_FM_CUDA_depth2_ver8.txt
+  | tee cuda_logs/PA02_FM_CUDA_depth2_ver6.txt
 ```
 
 반복 측정이나 workload별 측정에서는 파일명에 version, resolution, depth를 포함시켜 나중에 자동 집계할 수 있게 하였다.
 
 ```bash
-version=ver8
+version=ver6
 resolution_tag=res0p05
 depth=2
 
@@ -89,7 +89,7 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 
 ## txt/log를 CSV로 변환
 
-저장된 `.txt` 또는 `.log` 파일은 `plot_cuda_log_results.py`로 집계하였다. 이 스크립트는 `[score_all CUDA ...]`, `[Score profile]`, `[MatchWithWindow profile]`, `[match_time]` line에서 key-value 값을 읽어 CSV와 Markdown summary를 만든다.
+저장된 `.txt` 또는 `.log` 파일은 `plot_cuda_log_results.py`로 집계하였다. 이 스크립트는 `[score_all CUDA ...]`, `[Score profile]`, `[MatchWithWindow profile]`, `[match_time]` line에서 key-value 값을 읽어 CSV와 Markdown summary를 만들도록 사용하였다.
 
 ```bash
 cd ~/catkin_ws/src/cartographer_parallel
@@ -104,7 +104,7 @@ python3 src/plot_cuda_log_results.py \
   --no-plots
 ```
 
-CSV에는 version별 `match_total_mean`, `scorecoarse_mean`, `kernel_mean`, `h2d_mean`, `d2h_mean`, `score_last_mean`, `candidates_median` 등이 저장된다. `--skip-calls 5`는 CUDA context 생성과 초기 buffer 준비가 섞인 초반 호출을 집계에서 제외하기 위해 사용하였다.
+CSV에는 version별 `match_total_mean`, `scorecoarse_mean`, `kernel_mean`, `h2d_mean`, `d2h_mean`, `score_last_mean`, `candidates_median` 등이 저장되었다. `--skip-calls 5`는 CUDA context 생성과 초기 buffer 준비가 섞인 초반 호출을 집계에서 제외하기 위해 사용하였다.
 
 ## 기준 CUDA와 최종 batch CUDA 비교 실행
 
@@ -113,7 +113,7 @@ cd ~/catkin_ws
 source devel/setup.bash
 export ROS_MASTER_URI=http://localhost:11311
 
-for version in baseline ver8; do
+for version in baseline ver6; do
   echo "===== CUDA_SCORE_VERSION=${version} ====="
   export CUDA_SCORE_VERSION=${version}
 
@@ -129,7 +129,7 @@ done
 
 ## CUDA runtime/API profiling
 
-CUDA kernel/API 호출을 확인할 때 `nvprof`로 동일 launch를 감싼다.
+CUDA kernel/API 호출을 확인할 때 `nvprof`로 동일 launch를 감싸서 실행하였다.
 
 ### 기준 CUDA
 
@@ -155,7 +155,7 @@ nvprof \
 cd ~/catkin_ws
 source devel/setup.bash
 export ROS_MASTER_URI=http://localhost:11311
-export CUDA_SCORE_VERSION=ver8
+export CUDA_SCORE_VERSION=ver6
 
 nvprof \
   --profile-child-processes \
@@ -169,7 +169,7 @@ nvprof \
 
 ## CUDA kernel metric profiling
 
-kernel metric이 필요하면 다음처럼 실행한다.
+kernel metric은 다음 방식으로 실행하여 확인하였다.
 
 ```bash
 cd ~/catkin_ws
