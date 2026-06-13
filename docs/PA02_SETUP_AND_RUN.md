@@ -40,7 +40,6 @@ cd ~/catkin_ws/src
 cd ~/catkin_ws
 catkin_make -DBUILD_CUDA_TASK=ON -DBUILD_GPU_TASK=ON -DCMAKE_BUILD_TYPE=Release
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 ```
 
 CUDA 실행 파일은 다음 위치에 생성되는 것을 기준으로 확인하였다.
@@ -73,7 +72,6 @@ CPU 전용 실행 파일은 다음 위치에 생성되는 것을 기준으로 �
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
   ns:=student_05 \
@@ -92,7 +90,6 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 export CUDA_SCORE_VERSION=baseline
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
@@ -105,7 +102,6 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 export CUDA_SCORE_VERSION=ver6
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \

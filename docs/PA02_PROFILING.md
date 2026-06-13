@@ -27,7 +27,6 @@ node를 실행하면 다음 형태의 profiling line이 출력되도록 하였�
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 export CUDA_SCORE_VERSION=ver6
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
@@ -44,7 +43,6 @@ roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 mkdir -p cuda_logs
 
 export CUDA_SCORE_VERSION=baseline
@@ -111,7 +109,6 @@ CSV에는 version별 `match_total_mean`, `scorecoarse_mean`, `kernel_mean`, `h2d
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 
 for version in baseline ver6; do
   echo "===== CUDA_SCORE_VERSION=${version} ====="
@@ -136,7 +133,6 @@ CUDA kernel/API 호출을 확인할 때 `nvprof`로 동일 launch를 감싸서 �
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 export CUDA_SCORE_VERSION=baseline
 
 nvprof \
@@ -154,7 +150,6 @@ nvprof \
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 export CUDA_SCORE_VERSION=ver6
 
 nvprof \
@@ -174,7 +169,6 @@ kernel metric은 다음 방식으로 실행하여 확인하였다.
 ```bash
 cd ~/catkin_ws
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 export CUDA_SCORE_VERSION=baseline
 
 nvprof \

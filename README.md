@@ -35,7 +35,6 @@ CUDA build 후 포함된 map과 bag으로 최종 batch CUDA 구현을 실행하�
 cd ~/catkin_ws
 catkin_make -DBUILD_CUDA_TASK=ON -DBUILD_GPU_TASK=ON -DCMAKE_BUILD_TYPE=Release
 source devel/setup.bash
-export ROS_MASTER_URI=http://localhost:11311
 export CUDA_SCORE_VERSION=ver6
 
 roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
