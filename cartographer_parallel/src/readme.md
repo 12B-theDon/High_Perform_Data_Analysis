@@ -6,6 +6,49 @@ Cartographer Fast Correlative Scan Matcher | Jetson Nano | CUDA 10.2 | ROS Melod
 
 ## 1. 실험 목적과 조건
 
+### 1.1 PA02 실행 명령어
+
+본 과제의 모든 결과는 Jetson Nano에서 동일한 ROS bag과 launch 설정으로 실행하였다. 분석용 `perf`, `nvprof`, log filtering 명령은 보고서 실행 절에서 제외하고, 실제 구현을 실행하는 데 필요한 명령만 정리하였다.
+
+먼저 workspace를 빌드하고 ROS 환경을 설정한다.
+
+```bash
+cd ~/catkin_ws
+catkin_make -DBUILD_CUDA_TASK=ON -DBUILD_GPU_TASK=ON -DCMAKE_BUILD_TYPE=Release
+source devel/setup.bash
+export ROS_MASTER_URI=http://localhost:11311
+```
+
+*기준 CUDA* 실행은 다음과 같다.
+
+```bash
+cd ~/catkin_ws
+source devel/setup.bash
+export ROS_MASTER_URI=http://localhost:11311
+export CUDA_SCORE_VERSION=baseline
+
+roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
+  ns:=student_05 \
+  branch_and_bound_depth:=2
+```
+
+최종 batch CUDA 실행은 다음과 같다.
+
+```bash
+cd ~/catkin_ws
+source devel/setup.bash
+export ROS_MASTER_URI=http://localhost:11311
+export CUDA_SCORE_VERSION=ver8
+
+roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
+  ns:=student_05 \
+  branch_and_bound_depth:=2
+```
+
+workload 증가 실험은 동일한 실행 명령에서 map resolution과 branch-and-bound depth만 변경하여 수행하였다. 본문에서는 설정 이름보다 실제 계산량인 candidate-point evaluations를 기준으로 결과를 비교한다.
+
+### 1.2 PA02 최적화 방향
+
 PA01에서는 `score_all.cpp`를 대상으로 CPU profiling과 GPU profiling을 수행하였다. 그 결과 CPU에서는 `grid[y * w + x]`에 대한 불규칙한 memory access가 주요 병목으로 확인되었고, 반복 연산 최소화와 OpenMP 병렬화를 적용하더라도 성능 향상은 제한적이었다. 반면 GPU 구현에서는 candidate와 scan point 계산의 독립성을 활용하여 workload가 충분히 커질 때 CPU 대비 큰 성능 향상을 얻을 수 있었다. 그러나 PA01의 GPU 최적화는 주로 `score_all()` 단일 함수와 kernel 내부 reduction 방식에 초점을 맞추었기 때문에, scan별 CUDA 반복 호출, 매 호출마다 발생하는 memory allocation/copy/free, 그리고 상위 scoring path의 host-side overhead는 여전히 남아 있었다.
 
 따라서 PA02에서는 PA01의 결론을 출발점으로 삼아, `MakeLowCands()` → `FastMatcher::Score()` → `score_all()`로 이어지는 coarse scoring path 전체를 대상으로, scan별로 분리되던 CUDA score 호출을 여러 scan을 하나의 kernel launch로 묶는 방식, 즉 batch CUDA 구조로 재구성하였다. 이는 `score_all()` kernel 단독 최적화가 아니라, CUDA 반복 호출 overhead와 kernel 내부의 memory access 비효율을 동시에 줄이는 접근이다.
@@ -16,7 +59,7 @@ Fast Correlative Scan Matcher는 branch-and-bound 탐색의 초기 단계에서 
 
 ---
 
-### 1.1 사용한 profiling 도구
+### 1.3 사용한 profiling 도구
 
 본 실험에서는 병목을 세 수준으로 나누어 측정하였다. 함수 수준은 `std::chrono` timer로 주요 함수별 평균 실행 시간을 수집하였고, CUDA 호출 수준은 CUDA event로 H2D · kernel · D2H · host-side overhead를 분리하였다. CUDA runtime과 kernel 내부 metric은 `nvprof`로 API 호출 비용과 occupancy, global load efficiency, IPC 등을 수집하였다. 모든 측정은 ROS launch와 rosbag 실행 환경(Jetson Nano, Ubuntu 18.04 / CUDA 10.2)에서 수행하였으며, `nvprof` 누적 시간은 항목 간 상대 비율 해석에만 사용하였다.
 
