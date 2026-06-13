@@ -16,3 +16,7 @@ __pycache__/
 .agents/
 
 *.bag
+# PA02 report artifacts; distribution README is repository root README.md
+cartographer_parallel/src/readme.md
+cartographer_parallel/src/readme.pdf
+cartographer_parallel/src/readme_tmp.html

@@ -1,82 +1,60 @@
-# cartographer_parallel
+# High Perform Data Analysis - PA02
 
-ROS1 package bundle for a standalone 2D fast correlative scan matcher, with
-CPU and CUDA experiments for parallelizing the candidate scoring step.
+> **For PA02, follow this README.**
 
-The core hotspot is `score_all`: for every candidate grid offset, it sums the
-occupancy values touched by the scan endpoints and normalizes the score. The
-baseline implementation is intentionally simple, and the added variants explore
-CPU memory/layout improvements and GPU reductions.
+Cartographer Fast Correlative Scan Matcher를 ROS1 환경에서 빌드하고 실행하기 위한 배포용 안내이다. 세부 실행 명령과 profiling 재현 명령은 문서를 분리하였다.
 
-## Contents
+## 문서 구성
 
-- `cartographer_parallel/`: ROS1 catkin package.
-- `cartographer_parallel/src/score_all.cpp`: active CPU baseline build target.
-- `cartographer_parallel/src/score_all_v1.cpp` through `score_all_v4.cpp`:
-  CPU optimization experiments for the same `score_all` API.
-- `cartographer_parallel/src/assignment_GPU_v1.cu`: CUDA scoring experiment
-  with one block per candidate and shared-memory reduction.
-- `cartographer_parallel/src/assignment_GPU_v2.cu`: CUDA scoring experiment
-  with warp-level reduction.
-- `cartographer_parallel/maps/0501.yaml` and `0501.pgm`: included map.
-- `cartographer_parallel/bags/scan.bag`: included scan bag.
-- `figures/`: benchmark plots used in this report.
+- `docs/PA02_SETUP_AND_RUN.md`: Jetson Nano에서 패키지를 배치, 빌드, 실행하는 방법
+- `docs/PA02_PROFILING.md`: 수정된 코드의 profiling 출력을 다시 확인하는 방법
 
-## Build
+## 빠른 실행
+
+CUDA build 후 포함된 map과 bag으로 최종 batch CUDA 구현을 실행한다.
 
 ```bash
-mkdir -p ~/catkin_ws/src
-cp -r cartographer_parallel ~/catkin_ws/src/
 cd ~/catkin_ws
-catkin_make
+catkin_make -DBUILD_CUDA_TASK=ON -DBUILD_GPU_TASK=ON -DCMAKE_BUILD_TYPE=Release
 source devel/setup.bash
+export ROS_MASTER_URI=http://localhost:11311
+export CUDA_SCORE_VERSION=ver8
+
+roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
+  ns:=student_05 \
+  branch_and_bound_depth:=2
 ```
 
-By default, `CMakeLists.txt` builds the CPU library from
-`cartographer_parallel/src/score_all.cpp`. To compare a CPU variant, replace
-that source in `add_library(assignment_cpu_lib ...)` with one of the
-`score_all_v*.cpp` files, then rebuild.
-
-## Run With Included Bag
+## profiling 출력만 확인
 
 ```bash
-roslaunch cartographer_parallel cartographer_parallel_with_bag.launch ns:="student_00"
+cd ~/catkin_ws
+source devel/setup.bash
+export ROS_MASTER_URI=http://localhost:11311
+export CUDA_SCORE_VERSION=ver8
+
+roslaunch cartographer_parallel cartographer_parallel_with_bag.launch \
+  ns:=student_05 \
+  branch_and_bound_depth:=2 \
+  2>&1 \
+  | grep --line-buffered -E "CUDA score dispatcher|\\[score_all CUDA|\\[Score profile|\\[MatchWithWindow profile|\\[Node profile|\\[match_time\\]"
 ```
 
-The launch defaults use the included map and bag:
+## 기준 코드
 
-- map: `$(find cartographer_parallel)/maps/0501.yaml`
-- bag: `$(find cartographer_parallel)/bags/scan.bag`
-- initial pose: `x=-2.0`, `y=6.82`, `yaw=-3.0255282583321743`
+PA02는 PA01 branch의 Fast Correlative Scan Matcher 및 `score_all()` 구현을 기준으로 확장하였다.
 
-Runtime outputs:
+```text
+https://github.com/12B-theDon/High_Perform_Data_Analysis/tree/PA01
+```
 
-- `/map`
-- `/fast_correlative_odom`
-- `/fast_correlative_candidates`
-- `/fast_correlative_markers`
+## 주요 파일
 
-## Implemented Changes
-
-- Added timing instrumentation to the scoring path so each implementation
-  reports running averages and the latest call latency.
-- Kept the original CPU scorer as the baseline implementation.
-- Added optimized CPU variants that reduce repeated vector lookups, cache raw
-  pointers, precompute normalization, use unsigned bounds checks, and reuse scan
-  offsets when candidate counts are large.
-- Added CUDA v1 with persistent device buffers, cached map/scan transfers, one
-  CUDA block per candidate, and shared-memory reduction across scan points.
-- Added CUDA v2 with the same host-side caching strategy but a warp-reduction
-  kernel to reduce shared-memory synchronization overhead.
-- Added a CPU fallback path in the GPU implementations for small candidate sets
-  where launch and transfer overhead dominate.
-
-## Results
-
-The benchmark sweeps depth levels from `d4` to `d1`. Larger/deeper candidate
-sets are where the optimized CPU and GPU paths show the clearest separation
-from the baseline.
-
-![Average score_all runtime by depth](figures/score_all_avg_by_depth_d4_to_d1.png)
-
-![CPU and GPU average score_all runtime by depth](figures/score_all_cpu_gpu_avg_by_depth_d4_to_d1.png)
+- `cartographer_parallel/CMakeLists.txt`: CPU/CUDA build option 정의
+- `cartographer_parallel/launch/cartographer_parallel_with_bag.launch`: map과 bag을 함께 실행하는 launch file
+- `cartographer_parallel/launch/fast_correlative.launch`: matcher node 설정
+- `cartographer_parallel/src/cuda_fast_matcher.cpp`: CUDA scoring dispatcher와 matcher profiling 출력
+- `cartographer_parallel/src/cpu_fast_matcher.cpp`: CPU/OpenMP 비교용 matcher
+- `cartographer_parallel/src/fast_correlative_node_print.cpp`: ROS node 및 callback-level profiling 출력
+- `cartographer_parallel/src/cuda_score_all.cu`: 기준 CUDA scoring 구현
+- `cartographer_parallel/src/cuda_score_all_ver8.cu`: 최종 batch CUDA scoring 구현
