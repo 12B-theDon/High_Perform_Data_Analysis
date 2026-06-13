@@ -7,7 +7,25 @@ Cartographer Fast Correlative Scan Matcher를 ROS1 환경에서 빌드하고 실
 ## 문서 구성
 
 - `docs/PA02_SETUP_AND_RUN.md`: Jetson Nano에서 패키지를 배치, 빌드, 실행하는 방법
-- `docs/PA02_PROFILING.md`: 수정된 코드의 profiling 출력을 다시 확인하는 방법
+- `docs/PA02_PROFILING.md`: profiling line을 `grep`/`tee`로 저장하고 CSV로 집계하는 방법
+
+## CUDA version mapping
+
+`CUDA_SCORE_VERSION`은 실행할 CUDA scoring 구현을 선택하는 환경 변수이다. 보고서와 실행 문서에서는 내부 version 이름 대신 다음 구현명으로 해석한다.
+
+| selector | 구현명 | 의미 |
+|---|---|---|
+| `baseline`, `default`, `ver0` | 기준 CUDA | scan마다 개별 CUDA 호출, 매 호출마다 device allocation/copy/free 수행 |
+| `ver1` | shmem만 | warp reduction과 shared memory tiling을 적용한 비 batch kernel |
+| `ver2` | buffer 재사용 | 기준 kernel 구조를 유지하되 device buffer와 grid upload를 재사용 |
+| `ver3` | bounds만 | 정규 candidate grid를 bounds-indexed 방식으로 계산하는 비 batch 구현 |
+| `ver4` | kernel 변경 | 비 batch 호출 구조에서 kernel 내부 reduction과 memory read 방식을 변경한 구현 |
+| `ver5` | scan batch | 여러 scan의 point/candidate를 flat array로 묶어 batch kernel로 처리 |
+| `ver6` | bounds 감소 | scan batch에 `flat_cell`, `candidate_cell`, `full_inside` 기반 bounds check 감소 적용 |
+| `ver7` | scan batch 개선 | scan별 min/max bounds로 full-inside candidate를 판정하는 batch 구현 |
+| `ver8` | 최종 batch CUDA | sorted point offset과 `flat_cell`을 사용한 최종 bounds 감소 batch 구현 |
+
+6개의 실험 구현은 `kernel 변경`, `buffer 재사용`, `shmem만`, `bounds만`, `scan batch`, `bounds 감소`로 묶어 비교한다. `ver5`와 `ver7`은 scan batch 계열, `ver6`과 `ver8`은 bounds 감소 계열이며, 최종 결과는 `ver8`을 사용한다.
 
 ## 빠른 실행
 
